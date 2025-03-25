@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Travel Preferences</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            color: #343a40;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #495057;
+            font-weight: 600;
+        }
+        .card {
+            border: none;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .card-body {
+            padding: 30px;
+        }
+        .btn-add {
+            background-color: #28a745;
+            color: #fff;
+            border-radius: 8px;
+            padding: 8px 15px;
+            font-weight: 500;
+        }
+        .btn-add:hover {
+            background-color: #218838;
+            transform: translateY(-1px);
+        }
+        .budget-btn {
+            width: 100%;
+            border-radius: 8px;
+            padding: 10px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        .budget-btn.active {
+            transform: scale(0.98);
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+        }
+        .btn-generate {
+            background-color: #007bff;
+            color: #fff;
+            padding: 10px 25px;
+            font-size: 18px;
+            font-weight: 500;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        .btn-generate:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+        }
+        .error-message {
+            color: #dc3545;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+        .form-control, .form-select {
+            border-radius: 8px;
+            padding: 10px 15px;
+            border: 1px solid #ced4da;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: #80bdff;
+            box-shadow: 0 0 0 0.25rem rgba(0, 123, 255, 0.25);
+        }
+        .destination-item {
+            transition: all 0.3s;
+        }
+        .destination-item:hover {
+            transform: translateX(5px);
+        }
+        .remove-btn {
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+        .budget-btn-cheap.active {
+            background-color: #28a745;
+            color: white;
+        }
+        .budget-btn-moderate.active {
+            background-color: #ffc107;
+            color: #212529;
+        }
+        .budget-btn-luxury.active {
+            background-color: #dc3545;
+            color: white;
+        }
+        .travel-icon {
+            font-size: 24px;
+            margin-right: 10px;
+        }
+        .autocomplete-results {
+            position: absolute;
+            background: white;
+            z-index: 1000;
+            width: calc(100% - 30px);
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ced4da;
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .autocomplete-item {
+            padding: 8px 15px;
+            cursor: pointer;
+        }
+        .autocomplete-item:hover {
+            background-color: #f8f9fa;
+        }
+        .input-with-autocomplete {
+            position: relative;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container mt-4 mb-5">
+    <div class="card">
+        <div class="card-body">
+            <h2><span class="travel-icon">✈</span>Tell us your travel preferences<span class="travel-icon">🌴</span></h2>
+
+            <!-- Start and End Locations -->
+            <div class="row g-3">
+                <div class="col-md-6 input-with-autocomplete">
+                    <label for="start" class="form-label fw-semibold">From</label>
+                    <input type="text" class="form-control" id="start" placeholder="City, country" required autocomplete="off">
+                    <div id="start-autocomplete" class="autocomplete-results" style="display: none;"></div>
+                </div>
+                <div class="col-md-6 input-with-autocomplete">
+                    <label for="end" class="form-label fw-semibold">To</label>
+                    <input type="text" class="form-control" id="end" placeholder="City, country" required autocomplete="off">
+                    <div id="end-autocomplete" class="autocomplete-results" style="display: none;"></div>
+                </div>
+            </div>
+
+            <!-- Date Picker Section -->
+            <div class="row g-3 mt-3">
+                <div class="col-md-6">
+                    <label for="start-date" class="form-label fw-semibold">Departure Date</label>
+                    <input type="date" class="form-control" id="start-date" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="end-date" class="form-label fw-semibold">Return Date</label>
+                    <input type="date" class="form-control" id="end-date" required>
+                </div>
+            </div>
+
+            <!-- Add Destination Section -->
+            <div class="mt-4">
+                <label class="form-label fw-semibold">Additional Destinations</label>
+                <div id="destinations" class="mb-2"></div>
+                <button class="btn btn-add mt-2" onclick="addDestination()">
+                    <span>+</span> Add Stop
+                </button>
+            </div>
+
+            <!-- Number of Days with Validation -->
+            <div class="mt-4">
+                <label for="days" class="form-label fw-semibold">Trip Duration (days)</label>
+                <input type="number" class="form-control" id="days" placeholder="Enter number of days" min="1" max="30" required oninput="validateDays()">
+                <div id="error-message" class="error-message">Maximum 30 days allowed for the trip!</div>
+            </div>
+
+            <!-- Travel Style -->
+            <div class="mt-4">
+                <label class="form-label fw-semibold">Travel Style</label>
+                <select class="form-select" id="travel-style">
+                    <option selected value="Relaxing">🌴 Relaxing vacation</option>
+                    <option value="Adventure">⛰ Adventure trip</option>
+                    <option value="Cultural">🏛 Cultural exploration</option>
+                    <option value="Roadtrip">🚗 Road trip</option>
+                    <option value="Backpacking">🎒 Backpacking</option>
+                </select>
+            </div>
+
+            <!-- Budget Section -->
+            <div class="mt-4">
+                <h5 class="fw-semibold">Budget Level</h5>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <button class="btn btn-outline-success budget-btn budget-btn-cheap" onclick="selectBudget(this, 'Economy')">
+                            💵 Economy
+                        </button>
+                    </div>
+                    <div class="col-md-4">
+                        <button class="btn btn-outline-warning budget-btn budget-btn-moderate" onclick="selectBudget(this, 'Comfort')">
+                            💰 Comfort
+                        </button>
+                    </div>
+                    <div class="col-md-4">
+                        <button class="btn btn-outline-danger budget-btn budget-btn-luxury" onclick="selectBudget(this, 'Luxury')">
+                            💎 Luxury
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Generate Trip Button -->
+            <div class="text-center mt-5">
+                <a href="index.html" target="_blank" rel="noopener noreferrer"><button class="btn btn-generate btn-lg" onclick="generateTrip()">
+                    Generate My Perfect Trip
+                </button></a>
+                
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let destinationCount = 0;
+    let selectedBudget = '';
+    let debounceTimer;
+
+    // Set minimum date to today
+    document.addEventListener('DOMContentLoaded', function() {
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('start-date').min = today;
+        
+        // Set end date min to start date
+        document.getElementById('start-date').addEventListener('change', function() {
+            document.getElementById('end-date').min = this.value;
+        });
+
+        // Initialize autocomplete for start and end locations
+        setupAutocomplete('start', 'start-autocomplete');
+        setupAutocomplete('end', 'end-autocomplete');
+    });
+
+    // Function to setup autocomplete for an input field
+    function setupAutocomplete(inputId, resultsId) {
+        const input = document.getElementById(inputId);
+        const resultsContainer = document.getElementById(resultsId);
+
+        input.addEventListener('input', function() {
+            clearTimeout(debounceTimer);
+            const query = this.value.trim();
+            
+            if (query.length < 3) {
+                resultsContainer.style.display = 'none';
+                return;
+            }
+
+            debounceTimer = setTimeout(() => {
+                fetchAutocompleteResults(query, resultsContainer, input);
+            }, 300);
+        });
+
+        // Hide results when clicking elsewhere
+        document.addEventListener('click', function(e) {
+            if (e.target !== input) {
+                resultsContainer.style.display = 'none';
+            }
+        });
+    }
+    
+    
+    // Function to fetch autocomplete results from Nominatim API
+    function fetchAutocompleteResults(query, resultsContainer, inputField) {
+        const url = "https://nominatim.openstreetmap.org/search?format=json&q=" + encodeURIComponent(query) + "&addressdetails=1&limit=5";
+        
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                if (data.length === 0) {
+                    resultsContainer.style.display = 'none';
+                    return;
+                }
+
+                resultsContainer.innerHTML = '';
+                data.forEach(item => {
+                    const displayName = item.display_name.split(',').slice(0, 3).join(',');
+                    const div = document.createElement('div');
+                    div.className = 'autocomplete-item';
+                    div.textContent = displayName;
+                    div.addEventListener('click', function() {
+                        inputField.value = displayName;
+                        resultsContainer.style.display = 'none';
+                    });
+                    resultsContainer.appendChild(div);
+                });
+                resultsContainer.style.display = 'block';
+            })
+            .catch(error => {
+                console.error('Error fetching autocomplete results:', error);
+                resultsContainer.style.display = 'none';
+            });
+    }
+
+    // Function to add more destinations
+    function addDestination() {
+        destinationCount++;
+        const destinationsDiv = document.getElementById('destinations');
+
+        const div = document.createElement('div');
+        div.classList.add('mt-2', 'd-flex', 'align-items-center', 'destination-item');
+        div.innerHTML = `
+            <div class="input-with-autocomplete flex-grow-1">
+                <input type="text" class="form-control me-2 destination-input" id="destination-${destinationCount}" placeholder="City, country" required autocomplete="off">
+                <div class="autocomplete-results destination-autocomplete" style="display: none;"></div>
+            </div>
+            <button class="btn btn-danger remove-btn" onclick="removeDestination(this)">
+                ✖
+            </button>
+        `;
+        destinationsDiv.appendChild(div);
+
+        // Setup autocomplete for the new destination input
+        const newInput = document.getElementById(`destination-${destinationCount}`);
+        const newResults = div.querySelector('.destination-autocomplete');
+        
+        newInput.addEventListener('input', function() {
+            clearTimeout(debounceTimer);
+            const query = this.value.trim();
+            
+            if (query.length < 3) {
+                newResults.style.display = 'none';
+                return;
+            }
+
+            debounceTimer = setTimeout(() => {
+                fetchAutocompleteResults(query, newResults, newInput);
+            }, 300);
+        });
+
+        // Hide results when clicking elsewhere
+        document.addEventListener('click', function(e) {
+            if (e.target !== newInput) {
+                newResults.style.display = 'none';
+            }
+        });
+    }
+
+    // Function to remove destination
+    function removeDestination(button) {
+        button.parentElement.remove();
+        destinationCount--;
+    }
+
+    // Function to select budget
+    function selectBudget(button, budget) {
+        // Remove active class from all buttons
+        document.querySelectorAll('.budget-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        
+        // Add active class to clicked button
+        button.classList.add('active');
+        selectedBudget = budget;
+    }
+
+    // Function to validate maximum days
+    function validateDays() {
+        const daysInput = document.getElementById('days');
+        const errorMessage = document.getElementById('error-message');
+
+        if (daysInput.value > 30) {
+            errorMessage.style.display = 'block';
+            daysInput.setCustomValidity('Maximum 30 days allowed');
+        } else {
+            errorMessage.style.display = 'none';
+            daysInput.setCustomValidity('');
+        }
+    }
+
+    // Function to generate the trip details
+    function generateTrip() {
+        const start = document.getElementById('start').value.trim();
+        const end = document.getElementById('end').value.trim();
+        const startDate = document.getElementById('start-date').value;
+        const endDate = document.getElementById('end-date').value;
+        const days = document.getElementById('days').value;
+        const travelStyle = document.getElementById('travel-style').value;
+
+        // Validate required fields
+        if (!start || !end || !startDate || !endDate || !days || !selectedBudget) {
+            alert('Please fill all required fields and select a budget level.');
+            return;
+        }
+
+        // Validate dates
+        if (new Date(endDate) < new Date(startDate)) {
+            alert('Return date must be after departure date.');
+            return;
+        }
+
+        // Validate days
+        if (parseInt(days) > 30) {
+            alert('Trip cannot be longer than 30 days.');
+            return;
+        }
+
+        // Collect additional destinations
+        const destinations = [];
+        for (let i = 1; i <= destinationCount; i++) {
+           const destInput = document.getElementById(`destination-${i}`);
+            if (destInput && destInput.value.trim()) {
+                destinations.push(destInput.value.trim());
+            }
+        }
+
+        // Prepare trip details
+        let message = `🌟 Your Perfect Trip Plan 🌟\n\n`;
+        message += `✈ From: ${start}\n`;
+        message += `🏁 To: ${end}\n`;
+        message += `📅 Dates: ${formatDate(startDate)} → ${formatDate(endDate)}\n`;
+        message += `⏱ Duration: ${days} days\n`;
+        message += `🎒 Style: ${travelStyle}\n`;
+
+if (destinations.length) {
+    message += `📍 Stops: ${destinations.join(' → ')}\n`;
+}
+
+message += `💰 Budget: ${selectedBudget}\n\n`;
+message += `We're creating your personalized itinerary...`;
+
+alert(message);
+        
+        // Here you would typically send data to a server
+        // For now we'll just show the alert
+    }
+
+    // Helper function to format date
+    function formatDate(dateString) {
+        const options = { year: 'numeric', month: 'short', day: 'numeric' };
+        return new Date(dateString).toLocaleDateString('en-US', options);
+    }
+</script>
+
+</body>
+</html>
